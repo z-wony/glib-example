@@ -108,81 +108,82 @@ void timecheck_end()
 #define log(fmt, arg...)     print_with_color(fmt, ##arg)
 
 typedef struct {
-    int pid;
-    int rfd;
-    int wfd;
+	int pid;
+	int rfd;
+	int wfd;
 } comm_channel_s;
 
 static void parent_work(comm_channel_s ch[2])
 {
-    int i;
-    for (i = 0; i < 100; i++) {
-        char buf[10] = { 0, };
-        int r = read(ch[0].rfd, buf, 10);
-        if (r > 0) {
-            log("<parent> read: %s", buf);
-        } else {
-            log("<parent> read fail: %d", r);
-        }
-        memset(buf, 0, 10);
-        r = read(ch[1].rfd, buf, 10);
-        if (r > 0) {
-            log("<parent> read: %s", buf);
-        } else {
-            log("<parent> read fail: %d", r);
-        }
+	int i;
+	for (i = 0; i < 100; i++) {
+		char buf[10] = { 0, };
+		int r = read(ch[0].rfd, buf, 10);
+		if (r > 0) {
+			log("<parent> read: %s", buf);
+		} else {
+			log("<parent> read fail: %d", r);
+		}
 
-        usleep(100000);
-    }
+		memset(buf, 0, 10);
+		r = read(ch[1].rfd, buf, 10);
+		if (r > 0) {
+			log("<parent> read: %s", buf);
+		} else {
+			log("<parent> read fail: %d", r);
+		}
+
+		usleep(100000);
+	}
 }
 
 static void child_work(comm_channel_s ch, const char *name)
 {
-    int i;
-    for (i = 0; i < 10; i++) {
-        char buf[10] = { 0, };
-        snprintf(buf, 10, "%d: %s", (i + 1), name);
-        int r = write(ch.wfd, buf, 10);
-        if (r > 0) {
-            log("<child> write success");
-        } else {
-            log("<child> write fail: %d", r);
-        }
-        sleep(1);
-    }   
+	int i;
+	for (i = 0; i < 10; i++) {
+		char buf[10] = { 0, };
+		snprintf(buf, 10, "%d: %s", (i + 1), name);
+		int r = write(ch.wfd, buf, 10);
+		if (r > 0) {
+			log("<child> write success");
+		} else {
+			log("<child> write fail: %d", r);
+		}
+		sleep(1);
+	}   
 }
 
 comm_channel_s create_child(const char *child_name)
 {
-    int fds[2];
-    gboolean gret;
-    gret = g_unix_open_pipe(fds, FD_CLOEXEC, NULL);
-    if (!gret) {
-        log("Error");
-    }
-    int pid = fork();
+	int fds[2];
+	gboolean gret;
+	gret = g_unix_open_pipe(fds, FD_CLOEXEC, NULL);
+	if (!gret) {
+		log("Error");
+	}
+	int pid = fork();
 
-    comm_channel_s ch;
-    ch.rfd = fds[0];
-    ch.wfd = fds[1];
-    ch.pid = (int)pid;
+	comm_channel_s ch;
+	ch.rfd = fds[0];
+	ch.wfd = fds[1];
+	ch.pid = (int)pid;
 
-    gret = g_unix_set_fd_nonblocking(fds[0], TRUE, NULL);
-    if (!gret) {
-        log("Error2");
-    }
+	gret = g_unix_set_fd_nonblocking(fds[0], TRUE, NULL);
+	if (!gret) {
+		log("Error2");
+	}
 
-    // child
-    if (pid == 0) {
-	    register_thread_font();
-        child_work(ch, child_name);
-        exit(0);
-    } else {
-        // Just for debug print color setting
-	    register_thread_font_for_child(pid);
-    }
+	// child
+	if (pid == 0) {
+		register_thread_font();
+		child_work(ch, child_name);
+		exit(0);
+	} else {
+		// Just for debug print color setting
+		register_thread_font_for_child(pid);
+	}
 
-    return ch;
+	return ch;
 }
 
 int main()
@@ -191,12 +192,12 @@ int main()
 
 	register_thread_font();
 
-    comm_channel_s ch1 = create_child("Tom");
-    usleep(150000);
-    comm_channel_s ch2 = create_child("Jhon");
+	comm_channel_s ch1 = create_child("Tom");
+	usleep(150000);
+	comm_channel_s ch2 = create_child("Jhon");
 
-    comm_channel_s chs[2] = { ch1, ch2 };
-    parent_work(chs);
+	comm_channel_s chs[2] = { ch1, ch2 };
+	parent_work(chs);
 
 	timecheck_end();
 
